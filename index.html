@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>クマさんの森の悩み相談所</title>
     <style>
+        /* 前回のCSSはそのまま使用 */
         body {
             font-family: 'Arial Rounded MT Bold', 'Helvetica Rounded', Arial, sans-serif;
             background-image: url('./forest.png');
@@ -76,8 +77,24 @@
                 currentScreen: 'start',
                 worryType: null,
                 worryText: '',
-                selectedMethod: null
+                selectedMethod: null,
+                displayedMethods: []
             },
+
+            allMethods: [
+                { id: 'eat', text: 'ヤギに食べてもらう' },
+                { id: 'fly', text: '風船で空に飛ばす' },
+                { id: 'burn', text: 'たき火で燃やす' },
+                { id: 'plant', text: '種として植える' },
+                { id: 'recycle', text: '紙をリサイクルする' },
+                { id: 'origami', text: '折り紙に変身させる' },
+                { id: 'bubble', text: 'シャボン玉にして飛ばす' },
+                { id: 'time_capsule', text: 'タイムカプセルに入れる' },
+                { id: 'music', text: '歌にして歌う' },
+                { id: 'magic', text: '魔法で消し去る' },
+                { id: 'art', text: 'アート作品に変える' },
+                { id: 'compost', text: '堆肥にして花を育てる' }
+            ],
 
             screens: {
                 start: {
@@ -111,9 +128,9 @@
                         <div id="bear-character"></div>
                         <p>${game.getBearMessage()}</p>
                         <h3>クマ「さあ、この悩みをどうやって解決しようか？」</h3>
-                        <button onclick="game.selectMethod('eat')">ヤギに食べてもらう</button>
-                        <button onclick="game.selectMethod('fly')">風船で空に飛ばす</button>
-                        <button onclick="game.selectMethod('burn')">たき火で燃やす</button>
+                        ${game.state.displayedMethods.map(method => 
+                            `<button onclick="game.selectMethod('${method.id}')">${method.text}</button>`
+                        ).join('')}
                     `
                 },
                 animation: {
@@ -136,7 +153,22 @@
 
             navigate: function(screenName) {
                 this.state.currentScreen = screenName;
+                if (screenName === 'bearResponse') {
+                    this.selectRandomMethods();
+                }
                 this.render();
+            },
+
+            selectRandomMethods: function() {
+                this.state.displayedMethods = this.shuffleArray(this.allMethods).slice(0, 3);
+            },
+
+            shuffleArray: function(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
             },
 
             selectWorryType: function(type) {
@@ -179,7 +211,16 @@
                 const animations = {
                     eat: "クマ「ほら見て！ヤギさんが君の悩みを書いた紙をモグモグ食べているよ。悩みがヤギさんのエネルギーになるんだ！」",
                     fly: "クマ「わあ、すごい！君の悩みを乗せた風船が空高く舞い上がっていくよ。悩みが小さく見えるね。」",
-                    burn: "クマ「ほらほら、たき火がポカポカ暖かいでしょう？君の悩みが書かれた紙も、だんだん灰になっていくよ。」"
+                    burn: "クマ「ほらほら、たき火がポカポカ暖かいでしょう？君の悩みが書かれた紙も、だんだん灰になっていくよ。」",
+                    plant: "クマ「見てごらん、君の悩みを種として植えたら、きれいな花が咲いたよ。悩みが成長の糧になったんだね。」",
+                    recycle: "クマ「君の悩みの紙がリサイクルされて、新しい紙に生まれ変わったよ。新たな一歩を踏み出す準備ができたね。」",
+                    origami: "クマ「ほら、君の悩みの紙が素敵な折り鶴に変身したよ。悩みも形を変えれば、美しいものになるんだね。」",
+                    bubble: "クマ「わぁ、きれい！君の悩みがシャボン玉になって、風に乗って飛んでいくよ。軽やかになった気分かな？」",
+                    time_capsule: "クマ「君の悩みをタイムカプセルに入れたよ。未来のあなたが開けるとき、きっと成長を感じられるはずだ。」",
+                    music: "クマ「聞こえるかい？君の悩みが素敵な歌になったよ。辛かった思い出も、歌にすれば心が軽くなるね。」",
+                    magic: "クマ「あばらカダブラ！...ほら、魔法をかけたら君の悩みが消えていったよ。時には魔法の力を借りるのも大切だね。」",
+                    art: "クマ「わぁ、素晴らしい！君の悩みが美しいアート作品に変わったよ。辛い経験も、表現することで価値が生まれるんだね。」",
+                    compost: "クマ「見てごらん、君の悩みを堆肥にしたら、こんなにきれいな花が咲いたよ。辛いことも、いつかは良いことの糧になるんだ。」"
                 };
                 return animations[this.state.selectedMethod] || "クマ「ほら、見てごらん。君の悩みが魔法みたいに消えていくよ...」";
             },
@@ -188,7 +229,9 @@
                 const messages = [
                     "クマ「君ならきっと大丈夫！新しい一歩を踏み出す勇気を持ってね。」",
                     "クマ「困難を乗り越えた後には、きっと素晴らしいことが待っているはずだよ。頑張ろう！」",
-                    "クマ「君の強さを信じているよ。一緒に前を向いて歩んでいこう！」"
+                    "クマ「君の強さを信じているよ。一緒に前を向いて歩んでいこう！」",
+                    "クマ「悩みを解決できて良かったね。これからも何かあったら、いつでも相談に来てね。」",
+                    "クマ「一つ乗り越えるごとに、君はもっと強くなっているんだよ。その調子で頑張ろう！」"
                 ];
                 return messages[Math.floor(Math.random() * messages.length)];
             },
@@ -198,7 +241,8 @@
                     currentScreen: 'start',
                     worryType: null,
                     worryText: '',
-                    selectedMethod: null
+                    selectedMethod: null,
+                    displayedMethods: []
                 };
                 this.render();
             },
