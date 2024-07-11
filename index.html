@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>クマさんの森の悩み相談所</title>
+    <style>
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Helvetica Rounded', Arial, sans-serif;
+            background-color: #e6f0e2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #game-container {
+            background-color: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 12px;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px 20px;
+            margin: 8px 0;
+            box-sizing: border-box;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+        }
+        #bear-character {
+            width: 200px;
+            height: 200px;
+            margin: 20px auto;
+            position: relative;
+        }
+        .bear-body {
+            width: 160px;
+            height: 160px;
+            background-color: #8B4513;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 0;
+            left: 20px;
+        }
+        .bear-head {
+            width: 120px;
+            height: 100px;
+            background-color: #8B4513;
+            border-radius: 50%;
+            position: absolute;
+            top: 10px;
+            left: 40px;
+        }
+        .bear-ear {
+            width: 40px;
+            height: 40px;
+            background-color: #8B4513;
+            border-radius: 50%;
+            position: absolute;
+            top: -10px;
+        }
+        .bear-ear.left { left: 10px; }
+        .bear-ear.right { right: 10px; }
+        .bear-eye {
+            width: 20px;
+            height: 20px;
+            background-color: black;
+            border-radius: 50%;
+            position: absolute;
+            top: 30px;
+        }
+        .bear-eye.left { left: 25px; }
+        .bear-eye.right { right: 25px; }
+        .bear-nose {
+            width: 30px;
+            height: 20px;
+            background-color: #4E3524;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 25px;
+            left: 45px;
+        }
+        .bear-mouth {
+            width: 60px;
+            height: 30px;
+            border-bottom: 5px solid #4E3524;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 10px;
+            left: 30px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+
+    <script>
+        const game = {
+            container: document.getElementById('game-container'),
+            state: {
+                currentScreen: 'start',
+                worryType: null,
+                worryText: '',
+                selectedMethod: null
+            },
+
+            screens: {
+                start: {
+                    render: () => `
+                        <h1>クマさんの森の悩み相談所</h1>
+                        <div id="bear-character">
+                            <div class="bear-body"></div>
+                            <div class="bear-head">
+                                <div class="bear-ear left"></div>
+                                <div class="bear-ear right"></div>
+                                <div class="bear-eye left"></div>
+                                <div class="bear-eye right"></div>
+                                <div class="bear-nose"></div>
+                                <div class="bear-mouth"></div>
+                            </div>
+                        </div>
+                        <p>クマ「こんにちは！森の相談所へようこそ。君の悩みを聞かせてくれるかな？」</p>
+                        <button onclick="game.navigate('selectWorryType')">相談を始める</button>
+                    `
+                },
+                selectWorryType: {
+                    render: () => `
+                        ${game.renderBear()}
+                        <h2>クマ「どんな悩みかな？教えてくれるかい？」</h2>
+                        <button onclick="game.selectWorryType('work')">仕事</button>
+                        <button onclick="game.selectWorryType('relationship')">人間関係</button>
+                        <button onclick="game.selectWorryType('health')">健康</button>
+                        <button onclick="game.selectWorryType('future')">将来</button>
+                    `
+                },
+                inputWorry: {
+                    render: () => `
+                        ${game.renderBear()}
+                        <h2>クマ「そうか、${game.getWorryTypeName()}の悩みなんだね。詳しく聞かせてくれるかな？」</h2>
+                        <textarea id="worry-input" rows="4" placeholder="ここに悩みを入力してください..."></textarea>
+                        <button onclick="game.submitWorry()">クマに相談する</button>
+                    `
+                },
+                bearResponse: {
+                    render: () => `
+                        ${game.renderBear()}
+                        <p>${game.getBearMessage()}</p>
+                        <h3>クマ「さあ、この悩みをどうやって解決しようか？」</h3>
+                        <button onclick="game.selectMethod('eat')">ヤギに食べてもらう</button>
+                        <button onclick="game.selectMethod('fly')">風船で空に飛ばす</button>
+                        <button onclick="game.selectMethod('burn')">たき火で燃やす</button>
+                    `
+                },
+                animation: {
+                    render: () => `
+                        ${game.renderBear()}
+                        <h2>クマ「よし、それじゃあ始めよう！」</h2>
+                        <p>${game.getAnimationDescription()}</p>
+                        <button onclick="game.navigate('result')">結果を見る</button>
+                    `
+                },
+                result: {
+                    render: () => `
+                        ${game.renderBear()}
+                        <h2>クマ「やったね！悩みが解決したよ！」</h2>
+                        <p>${game.getEncouragementMessage()}</p>
+                        <button onclick="game.restart()">もう一度相談する</button>
+                    `
+                }
+            },
+
+            renderBear: function() {
+                return `
+                    <div id="bear-character">
+                        <div class="bear-body"></div>
+                        <div class="bear-head">
+                            <div class="bear-ear left"></div>
+                            <div class="bear-ear right"></div>
+                            <div class="bear-eye left"></div>
+                            <div class="bear-eye right"></div>
+                            <div class="bear-nose"></div>
+                            <div class="bear-mouth"></div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            navigate: function(screenName) {
+                this.state.currentScreen = screenName;
+                this.render();
+            },
+
+            selectWorryType: function(type) {
+                this.state.worryType = type;
+                this.navigate('inputWorry');
+            },
+
+            submitWorry: function() {
+                const worryInput = document.getElementById('worry-input');
+                this.state.worryText = worryInput.value;
+                this.navigate('bearResponse');
+            },
+
+            selectMethod: function(method) {
+                this.state.selectedMethod = method;
+                this.navigate('animation');
+            },
+
+            getWorryTypeName: function() {
+                const types = {
+                    work: "仕事",
+                    relationship: "人間関係",
+                    health: "健康",
+                    future: "将来"
+                };
+                return types[this.state.worryType] || "その";
+            },
+
+            getBearMessage: function() {
+                const messages = {
+                    work: "クマ「お仕事の悩みなんだね。大変だよね。でも、一緒に考えればきっと良いアイデアが浮かぶはずだよ！」",
+                    relationship: "クマ「人間関係って難しいよね。でも、誠実に向き合えば、きっと良い関係が築けるはずだよ。」",
+                    health: "クマ「健康が一番大切だよね。ぼくたちクマも冬眠をしっかりとるんだ。少し休んでみるのはどうかな？」",
+                    future: "クマ「将来のことを考えるのは大切だけど、今を精一杯生きることも忘れないでね。一歩ずつ進んでいこう！」"
+                };
+                return messages[this.state.worryType] || "クマ「そうか、そんな悩みを抱えていたんだね。一緒に解決方法を考えよう！」";
+            },
+
+            getAnimationDescription: function() {
+                const animations = {
+                    eat: "クマ「ほら見て！ヤギさんが君の悩みを書いた紙をモグモグ食べているよ。悩みがヤギさんのエネルギーになるんだ！」",
+                    fly: "クマ「わあ、すごい！君の悩みを乗せた風船が空高く舞い上がっていくよ。悩みが小さく見えるね。」",
+                    burn: "クマ「ほらほら、たき火がポカポカ暖かいでしょう？君の悩みが書かれた紙も、だんだん灰になっていくよ。」"
+                };
+                return animations[this.state.selectedMethod] || "クマ「ほら、見てごらん。君の悩みが魔法みたいに消えていくよ...」";
+            },
+
+            getEncouragementMessage: function() {
+                const messages = [
+                    "クマ「君ならきっと大丈夫！新しい一歩を踏み出す勇気を持ってね。」",
+                    "クマ「困難を乗り越えた後には、きっと素晴らしいことが待っているはずだよ。頑張ろう！」",
+                    "クマ「君の強さを信じているよ。一緒に前を向いて歩んでいこう！」"
+                ];
+                return messages[Math.floor(Math.random() * messages.length)];
+            },
+
+            restart: function() {
+                this.state = {
+                    currentScreen: 'start',
+                    worryType: null,
+                    worryText: '',
+                    selectedMethod: null
+                };
+                this.render();
+            },
+
+            render: function() {
+                const screen = this.screens[this.state.currentScreen];
+                if (screen) {
+                    this.container.innerHTML = screen.render();
+                } else {
+                    console.error('Unknown screen:', this.state.currentScreen);
+                }
+            },
+
+            init: function() {
+                this.render();
+            }
+        };
+
+        game.init();
+    </script>
+</body>
+</html>
